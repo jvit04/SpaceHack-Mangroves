@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transición Ecológica: Parque Lineal de Guayaquil</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom Styles & Chart Container Enforcement */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        /* Toggle Switch Styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #059669; /* Emerald 600 */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #059669;
+        }
+        
+        .nav-link {
+            transition: color 0.3s;
+        }
+        .nav-link:hover {
+            color: #059669;
+        }
+    </style>
+
+    <!-- Chosen Palette: Slate (Neutrals) for background/text, Emerald (Greens) for nature/positive impact, Ocean Blue for water context. -->
+    
+    <!-- Application Structure Plan: 
+         1. Hero Section: Introduces the context (Guayaquil Linear Park) and the primary objective (Flood Risk Reduction).
+         2. Interactive Dashboard (The Core): A side-by-side or tabbed comparison area. This is chosen because the report is inherently about "Before vs. After". Allowing the user to toggle between the "Current Scenario" (introduced species) and the "Proposed Scenario" (mangroves) makes the data immediately comparable and the impact obvious.
+         3. Detailed Breakdown Sections: Below the dashboard, specific sections break down the *why* (Permeability mechanics) and the *what* (Vegetation distribution) using charts that react to the central toggle state.
+         This structure is user-friendly because it immediately presents the solution's impact, then allows users to scroll down to explore the supporting data dynamically. 
+    -->
+
+    <!-- Visualization & Content Choices: 
+         - Goal: Compare vegetation types. -> Viz: Doughnut Chart. -> Interaction: Updates based on scenario toggle. -> Justification: Shows proportion of species clearly.
+         - Goal: Show impact on permeability. -> Viz: Bar Chart. -> Interaction: Updates based on scenario toggle. -> Justification: Direct comparison of absorption rates (mm/hr).
+         - Goal: Illustrate flood risk reduction over a storm timeline. -> Viz: Line Chart (Area). -> Interaction: Updates based on scenario toggle. -> Justification: Visualizes water accumulation over time, making the abstract concept of "risk" tangible.
+         Confirming NO SVG or Mermaid JS used. Charts rendered via Canvas (Chart.js). Icons use Unicode.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center font-bold text-xl text-emerald-700 tracking-tight">
+                    <span class="mr-2">&#127807;</span> Proyecto Parque Lineal
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#dashboard" class="nav-link text-sm font-medium text-slate-600">Impacto Global</a>
+                    <a href="#analisis-vegetacion" class="nav-link text-sm font-medium text-slate-600">Vegetación</a>
+                    <a href="#analisis-permeabilidad" class="nav-link text-sm font-medium text-slate-600">Permeabilidad & Riesgo</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Header / Intro -->
+        <header class="mb-12 text-center max-w-3xl mx-auto pt-8">
+            <h1 class="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Restauración Ecológica para la Mitigación de Inundaciones</h1>
+            <p class="text-lg text-slate-600 leading-relaxed">
+                Evaluación del impacto de la sustitución de especies introducidas por ecosistemas de manglar en el Parque Lineal de Guayaquil. El objetivo principal: aumentar la permeabilidad del suelo para reducir drásticamente el riesgo de inundación urbana.
+            </p>
+        </header>
+
+        <!-- Interactive Dashboard Control -->
+        <section id="dashboard" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 mb-12">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b border-slate-100 pb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Simulador de Escenarios</h2>
+                    <p class="text-slate-500 text-sm mt-1">Interaccione con el interruptor para comparar el estado actual frente a la propuesta de restauración.</p>
+                </div>
+                
+                <!-- Toggle Switch -->
+                <div class="mt-4 md:mt-0 flex items-center justify-center">
+                    <span class="mr-3 text-sm font-medium text-slate-600" id="label-actual">Estado Actual (Especies Introducidas)</span>
+                    <div class="relative inline-block w-14 h-8 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="scenarioToggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 border-slate-300 appearance-none cursor-pointer z-10 top-0 left-0 transition-all duration-300"/>
+                        <label for="scenarioToggle" class="toggle-label block overflow-hidden h-8 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                    </div>
+                    <span class="ml-3 text-sm font-medium text-slate-400" id="label-propuesto">Proyecto (Manglares)</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Summary Text -->
+            <div class="bg-slate-50 rounded-xl p-6 border border-slate-100">
+                <div class="flex items-start">
+                    <span class="text-3xl mr-4" id="status-icon">&#9888;&#65039;</span>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-2" id="summary-title">Situación de Riesgo Actual</h3>
+                        <p class="text-slate-600 leading-relaxed" id="summary-text">
+                            El parque lineal mantiene un alto porcentaje de especies botánicas introducidas con sistemas radiculares poco profundos. Esto genera una compactación del suelo que limita severamente la infiltración del agua de lluvia, resultando en baja permeabilidad y un alto riesgo de anegamiento de las áreas circundantes durante eventos climáticos severos o mareas altas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Breakdown Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Vegetation Breakdown -->
+            <section id="analisis-vegetacion" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Composición Vegetal</h3>
+                <p class="text-sm text-slate-500 mb-6">Proporción del área cubierta por tipo de especie. Observe cómo el traslado de especies modifica el paisaje.</p>
+                <div class="chart-container">
+                    <canvas id="vegChart"></canvas>
+                </div>
+                <div class="mt-4 text-sm text-slate-600 p-4 bg-emerald-50 rounded-lg border border-emerald-100 hidden" id="veg-insight">
+                    <strong>Dato Clave:</strong> La transición busca alcanzar un 75% de cobertura de manglar nativo, restaurando el ecosistema estuarino original del río Guayas.
+                </div>
+            </section>
+
+            <!-- Permeability Impact -->
+            <section id="analisis-permeabilidad" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Impacto en Permeabilidad del Suelo</h3>
+                <p class="text-sm text-slate-500 mb-6">Tasa de infiltración de agua (mm/h). Los sistemas radiculares (neumatóforos) del manglar actúan como conductos hídricos.</p>
+                <div class="chart-container">
+                    <canvas id="permChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Flood Risk Simulation (Spans full width) -->
+            <section id="riesgo-inundacion" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 lg:col-span-2 mt-8 lg:mt-0">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Simulación: Riesgo de Inundación (Evento de 6 Horas)</h3>
+                <p class="text-sm text-slate-500 mb-6">Proyección del nivel de agua acumulada en superficie durante un evento de lluvia intensa combinado con pleamar.</p>
+                <div class="chart-container" style="max-width: 100%;">
+                    <canvas id="floodChart"></canvas>
+                </div>
+                <div class="mt-6 flex justify-center space-x-8 text-center">
+                    <div>
+                        <p class="text-3xl font-bold text-slate-800" id="metric-peak">45 <span class="text-lg font-normal text-slate-500">cm</span></p>
+                        <p class="text-xs text-slate-500 uppercase tracking-wide">Pico Máximo de Agua</p>
+                    </div>
+                    <div>
+                        <p class="text-3xl font-bold text-slate-800" id="metric-recovery">6 <span class="text-lg font-normal text-slate-500">hrs</span></p>
+                        <p class="text-xs text-slate-500 uppercase tracking-wide">Tiempo de Drenaje</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-8 text-center mt-12">
+        <div class="max-w-6xl mx-auto px-4 text-sm">
+            <p>&#128202; Informe Interactivo de Arquitectura de la Información y Análisis de Datos.</p>
+            <p class="mt-2">Simulación basada en modelos de hidrología urbana y ecología de manglares para la ciudad de Guayaquil.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DATA STATE ---
+            const appData = {
+                current: {
+                    title: "Situación de Riesgo Actual",
+                    icon: "&#9888;&#65039;", // Warning icon
+                    desc: "El parque lineal mantiene un alto porcentaje de especies botánicas introducidas con sistemas radiculares poco profundos. Esto genera una compactación del suelo que limita severamente la infiltración del agua de lluvia, resultando en baja permeabilidad (15 mm/h) y un alto riesgo de anegamiento de las áreas circundantes durante eventos climáticos severos o mareas altas.",
+                    vegBreakdown: [65, 25, 10], // Introduced, Other Native, Mangrove
+                    permeability: 15,
+                    floodLevels: [0, 15, 38, 45, 35, 20, 12],
+                    peak: "45",
+                    recovery: "> 6"
+                },
+                proposed: {
+                    title: "Escenario de Mitigación (Manglares)",
+                    icon: "&#128154;", // Green heart / Nature
+                    desc: "Al trasladar las especies introducidas y rehabilitar la zona con especies de manglar (e.g., Rhizophora mangle), el complejo sistema de raíces profundas y neumatóforos incrementa drásticamente la porosidad del sustrato. La permeabilidad salta a 60 mm/h, permitiendo que el suelo actúe como una esponja natural, absorbiendo el impacto y reduciendo la escorrentía superficial.",
+                    vegBreakdown: [5, 20, 75], // Moved Introduced, Other Native, Replanted Mangrove
+                    permeability: 60,
+                    floodLevels: [0, 5, 12, 18, 10, 2, 0],
+                    peak: "18",
+                    recovery: "4.5"
+                }
+            };
+
+            // Global Chart Options
+            Chart.defaults.font.family = "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+            Chart.defaults.color = '#64748b'; // slate-500
+            
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            };
+
+            // --- INITIALIZE CHARTS ---
+
+            // 1. Vegetation Pie Chart
+            const ctxVeg = document.getElementById('vegChart').getContext('2d');
+            const vegChart = new Chart(ctxVeg, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Especies Introducidas', 'Flora Nativa Terrestre', 'Manglar (Nativo Estuarino)'],
+                    datasets: [{
+                        data: appData.current.vegBreakdown,
+                        backgroundColor: ['#f43f5e', '#fbbf24', '#059669'], // Rose (Bad), Amber, Emerald (Good)
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    cutout: '65%',
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Permeability Bar Chart
+            const ctxPerm = document.getElementById('permChart').getContext('2d');
+            const permChart = new Chart(ctxPerm, {
+                type: 'bar',
+                data: {
+                    labels: ['Tasa de Infiltración'],
+                    datasets: [{
+                        label: 'Capacidad Actual (Suelo Compactado)',
+                        data: [appData.current.permeability],
+                        backgroundColor: '#94a3b8', // Slate 400
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 80,
+                            title: { display: true, text: 'Milímetros por hora (mm/h)' }
+                        }
+                    }
+                }
+            });
+
+            // 3. Flood Risk Area Chart
+            const ctxFlood = document.getElementById('floodChart').getContext('2d');
+            const floodChart = new Chart(ctxFlood, {
+                type: 'line',
+                data: {
+                    labels: ['Hora 0', 'Hora 1', 'Hora 2', 'Hora 3', 'Hora 4', 'Hora 5', 'Hora 6'],
+                    datasets: [{
+                        label: 'Nivel de Agua Superficial',
+                        data: appData.current.floodLevels,
+                        borderColor: '#3b82f6', // Blue 500
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 60,
+                            title: { display: true, text: 'Nivel de agua en cm' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+
+
+            // --- INTERACTION LOGIC ---
+            
+            const toggle = document.getElementById('scenarioToggle');
+            const labelActual = document.getElementById('label-actual');
+            const labelPropuesto = document.getElementById('label-propuesto');
+            
+            // DOM Elements to update
+            const summaryTitle = document.getElementById('summary-title');
+            const summaryText = document.getElementById('summary-text');
+            const statusIcon = document.getElementById('status-icon');
+            const insightBox = document.getElementById('veg-insight');
+            const metricPeak = document.getElementById('metric-peak');
+            const metricRecovery = document.getElementById('metric-recovery');
+
+            toggle.addEventListener('change', function() {
+                const state = this.checked ? 'proposed' : 'current';
+                const data = appData[state];
+
+                // Update Labels Styling
+                if(this.checked) {
+                    labelActual.classList.replace('text-slate-600', 'text-slate-400');
+                    labelPropuesto.classList.replace('text-slate-400', 'text-emerald-700');
+                    insightBox.classList.remove('hidden');
+                } else {
+                    labelActual.classList.replace('text-slate-400', 'text-slate-600');
+                    labelPropuesto.classList.replace('text-emerald-700', 'text-slate-400');
+                    insightBox.classList.add('hidden');
+                }
+
+                // Update Text Content with simple fade effect
+                summaryText.style.opacity = 0;
+                setTimeout(() => {
+                    summaryTitle.innerText = data.title;
+                    summaryText.innerText = data.desc;
+                    statusIcon.innerHTML = data.icon;
+                    metricPeak.innerHTML = `${data.peak} <span class="text-lg font-normal text-slate-500">cm</span>`;
+                    metricRecovery.innerHTML = `${data.recovery} <span class="text-lg font-normal text-slate-500">hrs</span>`;
+                    summaryText.style.opacity = 1;
+                    summaryText.style.transition = 'opacity 0.4s ease';
+                }, 200);
+
+                // Update Charts Data
+                updateCharts(state);
+            });
+
+            function updateCharts(state) {
+                const isProposed = state === 'proposed';
+
+                // Update Veg Chart
+                vegChart.data.datasets[0].data = appData[state].vegBreakdown;
+                vegChart.update();
+
+                // Update Perm Chart
+                if (isProposed) {
+                    // Add comparison bar
+                    permChart.data.datasets = [
+                        {
+                            label: 'Capacidad Actual',
+                            data: [appData.current.permeability],
+                            backgroundColor: '#94a3b8',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Nueva Capacidad (Raíces Manglar)',
+                            data: [appData.proposed.permeability],
+                            backgroundColor: '#059669', // Emerald
+                            borderRadius: 6
+                        }
+                    ];
+                } else {
+                    // Revert to single bar
+                    permChart.data.datasets = [{
+                        label: 'Capacidad Actual (Suelo Compactado)',
+                        data: [appData.current.permeability],
+                        backgroundColor: '#94a3b8',
+                        borderRadius: 6
+                    }];
+                }
+                permChart.update();
+
+                // Update Flood Chart
+                floodChart.data.datasets[0].data = appData[state].floodLevels;
+                if(isProposed) {
+                    floodChart.data.datasets[0].borderColor = '#059669'; // Change to green to show positive outcome
+                    floodChart.data.datasets[0].backgroundColor = 'rgba(5, 150, 105, 0.2)';
+                    floodChart.data.datasets[0].pointBorderColor = '#059669';
+                } else {
+                    floodChart.data.datasets[0].borderColor = '#3b82f6'; 
+                    floodChart.data.datasets[0].backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                    floodChart.data.datasets[0].pointBorderColor = '#3b82f6';
+                }
+                floodChart.update();
+            }
+        });
+    </script>
+</body>
+</html>
