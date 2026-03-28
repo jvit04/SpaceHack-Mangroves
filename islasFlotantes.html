@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Ecosistemas Flotantes: Estero Salado</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Configuración de Tailwind para paleta personalizada -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'manglar-verde': '#059669', // Emerald 600
+                        'estero-azul': '#0284C7',   // Light Blue 600
+                        'tierra-calido': '#D97706', // Amber 600
+                        'fondo-claro': '#F9FAFB',   // Gray 50
+                        'texto-oscuro': '#1F2937',  // Gray 800
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Estilos personalizados obligatorios y específicos -->
+    <style>
+        /* Contenedores de gráficos responsivos */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Altura base para móviles */
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px; /* Altura para tablets y desktop */
+            }
+        }
+
+        /* Estilos para el diagrama interactivo hecho con HTML/CSS */
+        .diagram-layer {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .diagram-layer:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+        .active-layer {
+            border: 2px solid #059669;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* Ocultar barra de desplazamiento para un look más limpio en secciones horizontales si las hubiera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-fondo-claro text-texto-oscuro font-sans antialiased">
+
+    <!-- Chosen Palette: "Renacer del Estero" (Fondo gris extra claro, Acentos en Verde Esmeralda, Azul Estero y Ámbar cálido para botones/detalles). -->
+    
+    <!-- Application Structure Plan: 
+         1. Hero: Introducción impactante al concepto.
+         2. El Concepto (Interactivo): Diagrama HTML/CSS explicativo de qué es una isla flotante y sus partes. Facilita el entendimiento técnico sin abrumar.
+         3. El Contexto (Guayaquil): Explicación textual y estructurada de por qué el Parque Lineal / Av. Barcelona.
+         4. La Especie (Filtros): Selección interactiva de información sobre el Mangle Rojo, justificando su uso técnico.
+         5. Impacto (Chart.js): Gráfico proyectivo interactivo mostrando el beneficio ambiental a lo largo del tiempo para consolidar la propuesta.
+         Razón: Esta estructura lleva al usuario de la teoría general a la aplicación local específica, culminando con datos duros proyectados, ideal para un "pitch" o reporte informativo interactivo. -->
+         
+    <!-- Visualization & Content Choices: 
+         - Diagrama Estructural: Objetivo: Informar partes. Método: Capas HTML interactivas. Razón: Permite explorar cada componente sin usar SVG estáticos.
+         - Selección de Especie: Objetivo: Informar/Organizar. Método: Botones toggle cambiando contenido de texto/iconos unicode. Razón: Mantiene la pantalla limpia, permite profundizar a voluntad.
+         - Proyección Ambiental: Objetivo: Mostrar cambio/Impacto. Método: Chart.js Line Chart. Razón: Ideal para mostrar tendencias de calidad de agua a lo largo del tiempo. -->
+         
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Navegación Sticky -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 font-bold text-xl text-manglar-verde">
+                    EcoFlotantes GYE
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#concepto" class="text-gray-600 hover:text-manglar-verde transition">¿Qué son?</a>
+                    <a href="#contexto" class="text-gray-600 hover:text-manglar-verde transition">Av. Barcelona</a>
+                    <a href="#especies" class="text-gray-600 hover:text-manglar-verde transition">El Mangle</a>
+                    <a href="#impacto" class="text-gray-600 hover:text-manglar-verde transition">Impacto</a>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-gray-900 focus:outline-none text-2xl">
+                        &#9776; <!-- Unicode hamburger icon -->
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <a href="#concepto" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 mobile-link">¿Qué son?</a>
+            <a href="#contexto" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 mobile-link">Av. Barcelona</a>
+            <a href="#especies" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 mobile-link">El Mangle</a>
+            <a href="#impacto" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 mobile-link">Impacto</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="pt-24 pb-16 md:pt-32 md:pb-24 px-4 text-center max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-texto-oscuro mb-6 tracking-tight">
+            Islas Flotantes Biorremediadoras en el <span class="text-estero-azul">Estero Salado</span>
+        </h1>
+        <p class="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
+            Una propuesta técnica y ecológica para la regeneración del agua y recuperación del hábitat natural a lo largo del Parque Lineal, Malecón Salado y Av. Barcelona en Guayaquil.
+        </p>
+        <a href="#concepto" class="inline-block bg-manglar-verde text-white font-semibold py-3 px-8 rounded-full hover:bg-emerald-700 transition shadow-lg hover:shadow-xl">
+            Explorar la Solución
+        </a>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 space-y-24">
+
+        <!-- Sección 1: Concepto Interactivo -->
+        <section id="concepto" class="scroll-mt-24">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-texto-oscuro mb-4 border-b-4 border-manglar-verde inline-block pb-2">¿Qué son las Islas Flotantes?</h2>
+                <p class="text-gray-700 text-lg">
+                    Esta sección desglosa la anatomía de un humedal flotante artificial. Interactúe con el diagrama inferior seleccionando las diferentes capas para comprender cómo esta tecnología, basada en la naturaleza, funciona como un filtro vivo para el agua contaminada.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-gray-100">
+                
+                <!-- Diagrama HTML interactivo -->
+                <div class="relative w-full h-80 flex flex-col justify-end items-center bg-blue-50 rounded-xl overflow-hidden pt-10">
+                    <p class="absolute top-2 left-2 text-xs text-gray-400 font-mono">Diagrama Conceptual</p>
+                    
+                    <!-- Capa Vegetación -->
+                    <div id="layer-veg" class="diagram-layer w-3/4 h-24 bg-manglar-verde/20 rounded-t-full relative z-30 flex justify-center items-end pb-2 border-b-2 border-dashed border-manglar-verde" onclick="updateDiagramInfo('veg')">
+                        <span class="text-4xl">&#127795;</span> <!-- Unicode Tree -->
+                        <span class="text-3xl ml-2">&#127807;</span> <!-- Unicode Herb -->
+                    </div>
+                    
+                    <!-- Capa Matriz Flotante -->
+                    <div id="layer-mat" class="diagram-layer w-4/5 h-12 bg-yellow-700/80 rounded-lg relative z-20 flex items-center justify-center text-white text-sm font-bold shadow-inner" onclick="updateDiagramInfo('mat')">
+                        Matriz de Flotación (PET/Bambú)
+                    </div>
+                    
+                    <!-- Capa Raíces -->
+                    <div id="layer-root" class="diagram-layer w-3/4 h-20 bg-blue-200/50 relative z-10 flex justify-around pt-2 border-x-2 border-b-2 border-blue-300 rounded-b-3xl" onclick="updateDiagramInfo('root')">
+                         <div class="w-1 h-full bg-yellow-900/40 rounded-full"></div>
+                         <div class="w-1 h-4/5 bg-yellow-900/40 rounded-full"></div>
+                         <div class="w-1 h-full bg-yellow-900/40 rounded-full"></div>
+                         <div class="w-1 h-3/4 bg-yellow-900/40 rounded-full"></div>
+                    </div>
+                    
+                    <!-- Capa Agua (Estero) -->
+                    <div id="layer-water" class="diagram-layer absolute bottom-0 w-full h-24 bg-estero-azul/30 z-0 border-t-4 border-estero-azul/50 flex items-end justify-center pb-2" onclick="updateDiagramInfo('water')">
+                        <span class="text-estero-azul/80 text-sm font-bold tracking-widest">ESTERO SALADO &#12336;</span>
+                    </div>
+                </div>
+
+                <!-- Panel de información dinámica -->
+                <div id="diagram-info" class="h-full flex flex-col justify-center p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Haga clic en el diagrama</h3>
+                    <p class="text-gray-600">Seleccione una capa estructural a la izquierda para ver su función técnica dentro del ecosistema flotante.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 2: El Contexto (Av. Barcelona) -->
+        <section id="contexto" class="scroll-mt-24">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-texto-oscuro mb-4 border-b-4 border-estero-azul inline-block pb-2">Implementación en el Parque Lineal</h2>
+                <p class="text-gray-700 text-lg">
+                    El tramo que bordea la Av. Barcelona y el Malecón Salado presenta características únicas. Aquí detallamos por qué esta ubicación es estratégica y cómo se integraría el proyecto en el entorno urbano de Guayaquil.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Tarjeta 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="text-4xl mb-4 text-estero-azul">&#128205;</div> <!-- Location pin -->
+                    <h3 class="text-xl font-bold mb-2">Zona de Alta Visibilidad</h3>
+                    <p class="text-gray-600 text-sm">El Parque Lineal es un corredor altamente transitado. Las islas actuarían no solo como remediadores, sino como una herramienta de educación ambiental visible para miles de ciudadanos diarios.</p>
+                </div>
+                <!-- Tarjeta 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="text-4xl mb-4 text-estero-azul">&#128676;</div> <!-- Water boat/flow -->
+                    <h3 class="text-xl font-bold mb-2">Dinámica de Mareas</h3>
+                    <p class="text-gray-600 text-sm">A diferencia de sembrar en las orillas degradadas, las islas flotantes suben y bajan con la marea del Estero Salado, asegurando que las raíces estén siempre en contacto óptimo con el agua a tratar.</p>
+                </div>
+                <!-- Tarjeta 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="text-4xl mb-4 text-estero-azul">&#128038;</div> <!-- Bird -->
+                    <h3 class="text-xl font-bold mb-2">Corredor Biológico</h3>
+                    <p class="text-gray-600 text-sm">Crear un rosario de islas a lo largo de la Av. Barcelona reconectaría fragmentos de hábitat, atrayendo avifauna (garzas, patos cuervo) y proporcionando refugio a especies acuáticas locales.</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-blue-50 p-6 rounded-xl border-l-4 border-estero-azul">
+                <h4 class="font-bold text-gray-800 mb-2">Anclaje Técnico sugerido para este tramo:</h4>
+                <p class="text-gray-700 text-sm">Debido a las corrientes por las mareas, se recomienda un sistema de <strong>anclaje elástico</strong> (tipo *bungee*) amarrado a bloques de concreto en el lecho del estero o anclajes helicoidales. Esto permite a la isla adaptarse al nivel del agua (que varía varios metros en Guayaquil) sin tensión excesiva en la estructura ni riesgo de desprendimiento.</p>
+            </div>
+        </section>
+
+        <!-- Sección 3: Especies - El Mangle -->
+        <section id="especies" class="scroll-mt-24">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-texto-oscuro mb-4 border-b-4 border-tierra-calido inline-block pb-2">Selección Botánica: El Mangle</h2>
+                <p class="text-gray-700 text-lg">
+                    La clave del éxito de la biorremediación es la vegetación. Para el entorno salobre del Estero Salado, la flora nativa es obligatoria. Descubra qué especie es la indicada para protagonizar estas islas artificiales.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
+                <div class="flex flex-col md:flex-row">
+                    <!-- Selector interactivo -->
+                    <div class="md:w-1/3 bg-gray-50 border-r border-gray-200 p-6 flex flex-col justify-center space-y-4">
+                        <h3 class="font-bold text-gray-500 uppercase tracking-wider text-sm mb-2">Seleccione un tema:</h3>
+                        <button onclick="showMangroveData('especie')" class="mangrove-btn w-full text-left px-4 py-3 rounded-lg font-semibold bg-manglar-verde text-white shadow-md transition">
+                            La Especie Ideal
+                        </button>
+                        <button onclick="showMangroveData('raiz')" class="mangrove-btn w-full text-left px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-gray-100 transition">
+                            El Poder de las Raíces
+                        </button>
+                        <button onclick="showMangroveData('implementacion')" class="mangrove-btn w-full text-left px-4 py-3 rounded-lg font-semibold text-gray-600 hover:bg-gray-100 transition">
+                            Proceso de Siembra
+                        </button>
+                    </div>
+                    
+                    <!-- Contenido dinámico -->
+                    <div class="md:w-2/3 p-8">
+                        <div id="mangrove-content" class="h-full flex flex-col justify-center">
+                            <!-- Contenido inicial inyectado por JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 4: Impacto y Datos -->
+        <section id="impacto" class="scroll-mt-24">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-texto-oscuro mb-4 border-b-4 border-gray-800 inline-block pb-2">Proyección de Impacto Ambiental</h2>
+                <p class="text-gray-700 text-lg">
+                    Los datos a continuación ilustran la proyección teórica del impacto de instalar un sistema de 500m² de islas flotantes en el área del Parque Lineal sobre parámetros clave de calidad del agua en un periodo de 5 años.
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Evolución Proyectada de la Calidad del Agua</h3>
+                    <div class="text-sm bg-gray-100 px-3 py-1 rounded text-gray-600 font-medium">
+                        Área de influencia: 2km lineales
+                    </div>
+                </div>
+                
+                <!-- Contenedor del gráfico que cumple con los requisitos CSS -->
+                <div class="chart-container">
+                    <canvas id="impactChart"></canvas>
+                </div>
+
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div class="flex items-start">
+                        <span class="text-estero-azul text-xl mr-2">&#8593;</span> <!-- Up arrow -->
+                        <p><strong>Oxígeno Disuelto (OD):</strong> Aumenta debido a la fotosíntesis y al bombeo de oxígeno por las raíces del mangle hacia el agua circundante, vital para la vida acuática.</p>
+                    </div>
+                    <div class="flex items-start">
+                        <span class="text-manglar-verde text-xl mr-2">&#8595;</span> <!-- Down arrow -->
+                        <p><strong>Demanda Bioquímica de Oxígeno (DBO):</strong> Se reduce drásticamente. Las bacterias que colonizan las raíces consumen la materia orgánica contaminante como alimento.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-gray-300 py-12 border-t border-gray-700">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="text-2xl mb-4">&#127758;</p>
+            <p class="mb-2">Propuesta conceptual de Infraestructura Verde para Guayaquil.</p>
+            <p class="text-sm text-gray-500">Diseñado como recurso interactivo y educativo.</p>
+        </div>
+    </footer>
+
+    <!-- Lógica JavaScript -->
+    <script>
+        // --- 1. Navegación Móvil ---
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        const links = document.querySelectorAll('.mobile-link');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        links.forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+            });
+        });
+
+        // --- 2. Lógica del Diagrama Interactivo ---
+        const diagramData = {
+            'veg': {
+                title: 'Vegetación Emergente',
+                desc: 'Plantas halófitas (resistentes a la sal) que crecen sobre la isla. Sus hojas realizan fotosíntesis, capturan CO2 atmosférico y proporcionan refugio a insectos y aves locales del ecosistema del Estero Salado.',
+                color: 'text-manglar-verde'
+            },
+            'mat': {
+                title: 'Matriz de Flotación',
+                desc: 'El "suelo" de la isla. Para un proyecto sostenible en el Parque Lineal, se propone usar una mezcla de tubos de PVC reciclados, botellas PET encapsuladas en malla de coco, o caña guadúa tratada. Proporciona la flotabilidad y el soporte físico.',
+                color: 'text-yellow-700'
+            },
+            'root': {
+                title: 'Sistema Radicular (Raíces)',
+                desc: 'El corazón del sistema. Las raíces crecen a través de la matriz directamente hacia el agua del estero. Crean una superficie inmensa (biofilm) donde se alojan microorganismos beneficiosos que degradan contaminantes (nitratos, fosfatos, materia orgánica).',
+                color: 'text-blue-600'
+            },
+            'water': {
+                title: 'Agua del Estero Salado',
+                desc: 'El medio receptor. Al pasar a través de las raíces colgadas, el agua experimenta un proceso de filtración física y limpieza biológica, mejorando su claridad y niveles de oxígeno.',
+                color: 'text-estero-azul'
+            }
+        };
+
+        function updateDiagramInfo(layerId) {
+            // Limpiar estilos activos
+            document.querySelectorAll('.diagram-layer').forEach(el => el.classList.remove('active-layer'));
+            // Añadir estilo activo
+            document.getElementById('layer-' + layerId).classList.add('active-layer');
+
+            // Actualizar panel de texto
+            const infoBox = document.getElementById('diagram-info');
+            const data = diagramData[layerId];
+            
+            infoBox.innerHTML = `
+                <h3 class="text-2xl font-bold ${data.color} mb-3 transition-opacity duration-300">${data.title}</h3>
+                <p class="text-gray-700 text-lg leading-relaxed transition-opacity duration-300">${data.desc}</p>
+            `;
+        }
+
+        // --- 3. Lógica de Selección de Especies ---
+        const mangroveData = {
+            'especie': {
+                title: 'Rhizophora mangle (Mangle Rojo)',
+                icon: '&#127795;',
+                content: 'Es la especie <strong>idónea y excluyente</strong> para la parte más baja y húmeda de la isla. Se caracteriza por sus raíces fúlcreas (zancos). Es altamente tolerante a la salinidad (halófita) y está adaptada a zonas de inundación constante, imitando perfectamente las orillas naturales del Salado.'
+            },
+            'raiz': {
+                title: 'Biorremediadores Naturales',
+                icon: '&#128294;', // microscopio/ciencia
+                content: 'Las raíces del Mangle Rojo actúan como un filtro natural complejo. Exudan oxígeno al agua circundante, lo que promueve el crecimiento de bacterias aerobias en su superficie. Estas bacterias "comen" los contaminantes disueltos en el agua negra/gris del estero, limpiándola pasivamente.'
+            },
+            'implementacion': {
+                title: 'Siembra mediante Propágulos',
+                icon: '&#127793;', // brote
+                content: 'No se plantan semillas tradicionales. Se utilizan <em>propágulos</em> (plántulas vivas que caen del árbol madre). Estos se insertan en agujeros pre-diseñados en la matriz flotante con un sustrato de fibra de coco. Una vez que la raíz toca el agua, el crecimiento es acelerado por la alta carga de nutrientes (contaminación) del estero.'
+            }
+        };
+
+        function showMangroveData(key) {
+            // Actualizar botones UI
+            document.querySelectorAll('.mangrove-btn').forEach(btn => {
+                btn.classList.remove('bg-manglar-verde', 'text-white', 'shadow-md');
+                btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+            });
+            event.currentTarget.classList.remove('text-gray-600', 'hover:bg-gray-100');
+            event.currentTarget.classList.add('bg-manglar-verde', 'text-white', 'shadow-md');
+
+            // Actualizar contenido
+            const container = document.getElementById('mangrove-content');
+            const data = mangroveData[key];
+            
+            // Animación fade simple
+            container.style.opacity = 0;
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div class="text-5xl mb-6 text-manglar-verde">${data.icon}</div>
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">${data.title}</h4>
+                    <p class="text-gray-600 text-lg leading-relaxed">${data.content}</p>
+                    <div class="mt-6 inline-block bg-green-50 text-green-800 text-sm px-3 py-1 rounded-full border border-green-200">
+                        Apto para salinidad de Guayaquil
+                    </div>
+                `;
+                container.style.transition = 'opacity 0.3s ease';
+                container.style.opacity = 1;
+            }, 150);
+        }
+
+        // Inicializar vistas
+        updateDiagramInfo('veg');
+        showMangroveData('especie');
+
+        // --- 4. Configuración de Chart.js ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('impactChart').getContext('2d');
+            
+            const data = {
+                labels: ['Año 0', 'Año 1', 'Año 2', 'Año 3', 'Año 4', 'Año 5'],
+                datasets: [
+                    {
+                        label: 'Oxígeno Disuelto (mg/L) - Tendencia Positiva',
+                        data: [1.2, 1.8, 2.5, 3.8, 4.5, 5.2],
+                        borderColor: '#0284C7', // estero-azul
+                        backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#0284C7',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        tension: 0.4, // Curva suave
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Contaminantes DBO (mg/L) - Tendencia Negativa',
+                        data: [120, 105, 80, 55, 40, 30],
+                        borderColor: '#059669', // manglar-verde
+                        backgroundColor: 'rgba(5, 150, 105, 0.0)',
+                        borderWidth: 3,
+                        borderDash: [5, 5], // Línea punteada
+                        pointBackgroundColor: '#059669',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        tension: 0.4,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            };
+
+            const config = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, /* CRÍTICO: Permite que el contenedor controle la altura */
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { family: 'Inter', size: 13 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                            titleFont: { size: 14, family: 'Inter' },
+                            bodyFont: { size: 13, family: 'Inter' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label.split(' -')[0] || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + ' mg/L';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Oxígeno Disuelto (mg/L)',
+                                color: '#0284C7',
+                                font: { weight: 'bold' }
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 8
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Demanda Bioquímica Oxígeno (mg/L)',
+                                color: '#059669',
+                                font: { weight: 'bold' }
+                            },
+                            grid: { drawOnChartArea: false }, // Evitar cuadrícula superpuesta
+                            suggestedMin: 0,
+                            suggestedMax: 140
+                        }
+                    }
+                }
+            };
+
+            new Chart(ctx, config);
+        });
+    </script>
+</body>
+</html>
